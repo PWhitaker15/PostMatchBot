@@ -1,46 +1,31 @@
 import requests, time, glob, os
+from watchdog.observers import Observer
+from watchdog.events import PatternMatchingEventHandler
 from PIL import Image, ImageFont, ImageDraw
 
 print('bot active')
 
-file = open('./token.txt')
-auth = file.read()
-file.close()
+#Watchdog to watch the directory
 
-# Ballchasing auth
-token = {
-        'Authorization': f'{auth}'
-        }
+if __name__ == "__main__":
+    patterns = ["*"]
+    ignore_patterns = None
+    ignore_directories = False
+    case_sensitive = True
+    my_event_handler = PatternMatchingEventHandler(patterns, ignore_patterns, ignore_directories, case_sensitive)
 
-file = open('./oldreplay.txt')
-old_replay = file.read()
-file.close()
-
-first_instance = True
-
-while True:
-
-    path = os.path.join('E:/Documents/My Games/Rocket League/TAGame/Demos', '*')
-    newest_replay = max(glob.iglob(path), key=os.path.getctime)
-
-    if newest_replay != old_replay:
-        # When new replay added, post replay to Ballchasing group
-        replay = newest_replay
+    def on_created(event):
+        #replay = os.path.basename(event.src_path) #returns the name of the file
+        time.sleep(1)
+        replay = event.src_path
         replay_file = open(replay, 'rb')
         files = {
                         'file': (replay,
-                                 replay_file),
+                                replay_file),
                     }
         replay_send = requests.post(f'https://ballchasing.com/api/v2/upload?', headers=token, files=files)
         location = replay_send.json()['id']
 
-        file1 = open('./oldreplay.txt', 'w')
-        file1.write(f'{newest_replay}')
-        file1.close()
-        file2 = open('./oldreplay.txt', 'r')
-        old_replay = file2.read()
-        file2.close()
-        replay_file.close()
         # Wait for replay to process, then get request from group
         time.sleep(10)
 
@@ -196,5 +181,33 @@ while True:
         # Save image
         print('Image Updated')
         match_image.save('./PostMatchScreenUpdated.png')
-    # loop timer
-    time.sleep(2)
+    
+    my_event_handler.on_created = on_created
+
+    path = os.path.join('C:/Users/Andres/Documents/My Games/Rocket League/TAGame/Demos')
+    go_recursively = True
+    my_observer = Observer()
+    my_observer.schedule(my_event_handler, path, recursive=go_recursively)
+    my_observer.start()
+    
+    
+    #BallChasing Token
+
+    auth = "DhXtKReCy0c6apSw81IYAez5SZsrepQ2GZfZeH0y"
+    
+
+    # Ballchasing auth
+    token = {
+            'Authorization': f'{auth}'
+            }
+
+    # file = open('./oldreplay.txt') //Reading the old replay file
+    # old_replay = file.read()
+    # file.close()
+
+    while True:
+
+        #path = os.path.join('E:/Documents/My Games/Rocket League/TAGame/Demos', '*') #make sure to change this
+        #newest_replay = max(glob.iglob(path), key=os.path.getctime
+        # loop timer
+        time.sleep(2)
