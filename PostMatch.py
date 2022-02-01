@@ -1,4 +1,4 @@
-import requests, time, os
+import requests, time, os, json
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 from PIL import Image, ImageFont, ImageDraw
@@ -37,7 +37,8 @@ if __name__ == "__main__":
                 group_stats = requests.get(f'https://ballchasing.com/api/replays/{location}', headers=token)
                 time.sleep(1)
             if group_stats.json()['status'] == "ok":
-
+                stats = json.loads(group_stats.content)
+                # print(stats)
                 # Image setup
                 match_image = Image.open('./PostMatchScreen.png')
                 edit_match = ImageDraw.Draw(match_image)
@@ -52,10 +53,16 @@ if __name__ == "__main__":
 
                     # Edit scoreboard on image
                     scoreboard_font = ImageFont.truetype('./Gobold_Bold.ttf', 50)
-                    text = str(team_1['name'])
+                    if "name" in stats["blue"]:
+                        text = str(team_1['name'])
+                    else:
+                        text = "blue"
                     w, h = edit_match.textsize(text, scoreboard_font)
                     edit_match.text(((1170 - w) / 2, 60), text, (255, 255, 255), font=scoreboard_font)
-                    text = str(team_2['name'])
+                    if "name" in stats["orange"]:
+                        text = str(team_2['name'])
+                    else:
+                        text = "orange"
                     w, h = edit_match.textsize(text, scoreboard_font)
                     edit_match.text(((2690 - w) / 2, 60), text, (255, 255, 255), font=scoreboard_font)
                     text = str(team_1['stats']['core']['goals'])
